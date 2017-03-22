@@ -6,21 +6,20 @@
 </head>
 
 <body>
-    <div>
-        <svg id="cb" style="display:block; margin:auto" v-bind:width="x * 12" v-bind:height="y * 12">
-            <g v-for="ix in x">
-                <rect v-bind:width="grid.x" v-bind:height="grid.y" v-bind:x="(ix - 1) * (grid.x + grid.d)" v-bind:y="(iy - 1) * (grid.y + grid.d)"
-                    v-bind:fill="pix[c((ix - 1), (iy - 1))] == 1 ? color.positive : color.negative" @mouseover="mouseover((ix-1), (iy-1))"
-                    v-for="iy in y"></rect>
-            </g>
-        </svg>
-    </div>
+    <svg id="cb" v-bind:width="x * (grid.x + grid.d)" v-bind:height="y * (grid.y + grid.d)">
+        <g v-for="ix in x">
+            <rect v-bind:width="grid.x" v-bind:height="grid.y" v-bind:x="(ix - 1) * (grid.x + grid.d)" v-bind:y="(iy - 1) * (grid.y + grid.d)"
+                v-bind:fill="color.negative" v-for="iy in y"></rect>
+            <rect v-bind:width="grid.x" v-bind:height="grid.y" v-bind:x="(ix - 1) * (grid.x + grid.d)" v-bind:y="(iy - 1) * (grid.y + grid.d)"
+                v-bind:fill="color.positive" v-for="iy in y" v-bind:style="'opacity:' + get((ix - 1), (iy - 1))"></rect>
+        </g>
+    </svg>
     <script>
         var cb = new Vue({
             el: '#cb',
             data: {
-                x: 30,
-                y: 30,
+                x: 20,
+                y: 20,
                 grid: {
                     x: 10,
                     y: 10,
@@ -36,6 +35,25 @@
                 c: function (x, y) {
                     return this.x * x + y
                 },
+                set: function (x, y, v) {
+                    Vue.set(this.pix, this.c(x, y), v)
+                },
+                get: function (x, y) {
+                    return this.pix[this.c(x, y)]
+                },
+                init: function () {
+                    for (ix = 0; ix < this.x; ix++) {
+                        for (iy = 0; iy < this.y; iy++) {
+                            this.set(ix, iy, 0)
+                        }
+                    }
+                    this.set(3, 3, 1)
+                    this.set(4, 3, 1)
+                    this.set(5, 3, 1)
+                    this.set(5, 2, 1)
+                    this.set(4, 1, 1)
+                },
+
                 bias: function (x, y, dx, dy) {
                     ax = (x + dx) % this.x
                     if (ax < 0) {
@@ -62,16 +80,6 @@
                     }
                     return sum
                 },
-                init: function () {
-                    for (i = 0; i < this.x * this.y; i++) {
-                        Vue.set(this.pix, i, 0)
-                    }
-                    Vue.set(this.pix, this.c(3, 3), 1)
-                    Vue.set(this.pix, this.c(4, 3), 1)
-                    Vue.set(this.pix, this.c(5, 3), 1)
-                    Vue.set(this.pix, this.c(5, 2), 1)
-                    Vue.set(this.pix, this.c(4, 1), 1)
-                },
                 next: function () {
                     npix = this.pix.slice(0)
                     for (iy = 0; iy < this.y; iy++) {
@@ -88,15 +96,21 @@
                     }
                     this.pix = npix
                 },
-                mouseover: function (x, y) {
-                    Vue.set(this.pix, this.c(x, y), 1)
+                start: function () {
+                    this.ticker = setInterval(cb.next, 200)
+                },
+                stop: function () {
+                    clearInterval(this.ticker)
+                },
+                clear: function () {
+                    for (i = 0; i < this.x * this.y; i++) {
+                        Vue.set(this.pix, i, 0)
+                    }
                 }
             }
         })
-        window.onload = function () {
-            cb.init()
-            setInterval(cb.next, 200)
-        }()
+        cb.init()
+        cb.start()
     </script>
 </body>
 
